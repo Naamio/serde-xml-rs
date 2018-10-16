@@ -101,3 +101,34 @@ where
         write!(self.parent.writer, "</{}>", self.name).map_err(|e| e.into())
     }
 }
+
+pub struct Seq<'w, W>
+    where W: 'w + Write
+{
+    parent: &'w mut Serializer<W>,
+}
+
+impl<'w, W> Seq<'w, W>
+    where W: 'w + Write
+{
+    pub fn new(parent: &'w mut Serializer<W>) -> Self {
+        Seq { parent }
+    }
+}
+
+impl<'w, W> ser::SerializeSeq for Seq<'w, W>
+    where W: 'w + Write
+{
+    type Ok = ();
+    type Error = Error;
+
+    fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<()>
+        where T: Serialize
+    {
+        value.serialize(&mut *self.parent)
+    }
+
+    fn end(self) -> Result<()> {
+        Ok(())
+    }
+}

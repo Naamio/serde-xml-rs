@@ -4,7 +4,7 @@ use std::fmt::Display;
 use serde::ser::{self, Impossible, Serialize};
 
 use error::{Error, ErrorKind, Result};
-use self::var::{Map, Struct};
+use self::var::{Map, Seq, Struct};
 
 mod var;
 
@@ -112,7 +112,7 @@ where
     type Ok = ();
     type Error = Error;
 
-    type SerializeSeq = Impossible<Self::Ok, Self::Error>;
+    type SerializeSeq = Seq<'w, W>;
     type SerializeTuple = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
@@ -218,9 +218,7 @@ where
         name: &'static str,
         value: &T,
     ) -> Result<Self::Ok> {
-        Err(
-            ErrorKind::UnsupportedOperation("serialize_newtype_struct".to_string()).into(),
-        )
+        self.write_wrapped(name, value)
     }
 
     fn serialize_newtype_variant<T: ?Sized + Serialize>(
@@ -234,10 +232,7 @@ where
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
-        // TODO: Figure out how to constrain the things written to only be composites
-        Err(
-            ErrorKind::UnsupportedOperation("serialize_seq".to_string()).into(),
-        )
+        Ok(Seq::new(self))
     }
 
     fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple> {
